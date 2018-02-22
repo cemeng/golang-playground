@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
@@ -16,17 +17,22 @@ func sayHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Say my name, get name: %s, post name: %s", name, nameFromPost)
 }
 
+func booksHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	title := vars["title"]
+	page := vars["page"]
+
+	fmt.Fprintf(w, "You've requested the book: %s on page %s\n", title, page)
+}
+
 func main() {
-	http.HandleFunc("/", rootHandler)
-
-	// how do I indicate if a route should be accessible by POST or GET only?
-	// by adding Methods call at the end
-	http.HandleFunc("/say", sayHandler)
-
+	r := mux.NewRouter()
 	fs := http.FileServer(http.Dir("static/"))
+
+	http.HandleFunc("/", rootHandler)
+	http.HandleFunc("/say", sayHandler)
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// r.URL.Path
-
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	r.HandleFunc("/books/{title}/page/{page}", booksHandler)
+	log.Fatal(http.ListenAndServe(":8000", r))
 }
